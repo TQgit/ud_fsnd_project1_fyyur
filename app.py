@@ -42,7 +42,7 @@ class Venue(db.Model):
     website = db.Column(db.String(120), nullable=True)
     is_seeking_talent = db.Column(db.Boolean, nullable=False, default=True)
     seeking_description = db.Column(db.String(200), nullable=False, default='Looking for talented performers!')
-    shows = db.relationship('Show', backref='venue', lazy=True)
+    shows = db.relationship('Show', backref='venue', cascade='all, delete-orphan', lazy=True)
 
 
 class Artist(db.Model):
@@ -224,7 +224,8 @@ def delete_venue(venue_id):
     error = False
 
     try:
-        Venue.query.filter_by(id=venue_id).delete()
+        venue_to_delete = Venue.query.filter_by(id=venue_id).all()[0]
+        db.session.delete(venue_to_delete)
         db.session.commit()
     except:
         error = True
