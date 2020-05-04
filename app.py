@@ -238,9 +238,6 @@ def delete_venue(venue_id):
         flash('Venue #' + str(venue_id) + ' was successfully deleted!')
         return render_template('pages/home.html')
 
-    # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
-    # clicking that button delete it from the db then redirect the user to the homepage
-
 
 #  Artists
 #  ----------------------------------------------------------------
