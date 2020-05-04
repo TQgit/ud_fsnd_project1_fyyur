@@ -31,7 +31,10 @@ def upgrade():
                existing_type=sa.VARCHAR(length=120),
                nullable=True)
     op.create_unique_constraint(None, 'artists', ['name'])
+    op.add_column('artists', sa.Column('genres', sa.ARRAY(sa.String(length=20)), nullable=False))
     op.add_column('venues', sa.Column('genres', sa.ARRAY(sa.String(length=20)), nullable=False))
+
+
     op.alter_column('venues', 'facebook_link',
                existing_type=sa.VARCHAR(length=120),
                nullable=True)
@@ -62,6 +65,7 @@ def downgrade():
                existing_type=sa.VARCHAR(length=120),
                nullable=False)
     op.drop_column('venues', 'genres')
+    op.drop_column('artists', 'genres')
     op.drop_constraint(None, 'artists', type_='unique')
     op.alter_column('artists', 'website',
                existing_type=sa.VARCHAR(length=120),
