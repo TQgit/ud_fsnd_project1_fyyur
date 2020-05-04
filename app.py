@@ -39,6 +39,7 @@ class Venue(db.Model):
     state = db.Column(db.String(120), nullable=False)
     address = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(120), nullable=True)
+    genres = db.Column(db.ARRAY(db.String(20)), nullable=False)
     image_link = db.Column(db.String(500), nullable=False)
     facebook_link = db.Column(db.String(120), nullable=True)
     website = db.Column(db.String(120), nullable=True)
@@ -53,11 +54,11 @@ class Artist(db.Model):
     __tablename__ = 'artists'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
+    name = db.Column(db.String, unique=True, nullable=False)
     city = db.Column(db.String(120), nullable=False)
     state = db.Column(db.String(120), nullable=False)
     phone = db.Column(db.String(120), nullable=True)
-    genres = db.Column(db.String(120), nullable=False)
+    genres = db.Column(db.ARRAY(db.String(20)), nullable=False)
     image_link = db.Column(db.String(500), nullable=False)
     facebook_link = db.Column(db.String(120), nullable=True)
     website = db.Column(db.String(120), nullable=True)
@@ -237,7 +238,7 @@ def show_venue(venue_id):
     data = {
         "id": venue.id,
         "name": venue.name,
-        "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],  # TODO: Add genre functionality
+        "genres": venue.genres,
         "address": venue.address,
         "city": venue.city,
         "state": venue.state,
@@ -276,7 +277,7 @@ def create_venue_submission():
                       address=request.form['address'], phone=request.form['phone'],
                       image_link=request.form['image_link'],
                       facebook_link=request.form['facebook_link'],
-                      website=request.form['website'])  # TODO: Add genres functionality
+                      website=request.form['website'], genres=request.form.getlist('genres'))
         db.session.add(venue)
         db.session.commit()
     except:
@@ -478,7 +479,7 @@ def edit_venue(venue_id):
     data = {
         "id": venue.id,
         "name": venue.name,
-        "genres": ["Jazz", "Reggae", "Swing", "Classical", "Folk"],  # TODO: add genre
+        "genres": venue.genres,
         "address": venue.address,
         "city": venue.city,
         "state": venue.state,
@@ -507,7 +508,8 @@ def edit_venue_submission(venue_id):
         venue.phone = request.form['phone']
         venue.image_link = request.form['image_link']
         venue.facebook_link = request.form['facebook_link'],
-        venue.website = request.form['website']  # TODO: Add genres functionality
+        venue.website = request.form['website']
+        venue.genres = request.form.getlist('genres')
         db.session.commit()
     except:
         error = True
