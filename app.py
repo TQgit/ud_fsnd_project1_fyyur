@@ -149,8 +149,8 @@ def venues():
             venues_query = Venue.query.filter_by(state=state, city=city).order_by(Venue.name).all()
             venues = [{'id': venue.id,
                        'name': venue.name,
-                       'num_upcoming_shows': Show.query.filter_by(venue_id=venue.id).count()}
-                      # TODO: add upcoming logic
+                       'num_upcoming_shows': Show.query.filter(Show.venue_id == venue.id,
+                                                               Show.start_time > datetime.now()).count()}
                       for venue in venues_query]
             data.append({'city': city,
                          'state': state,
@@ -180,7 +180,8 @@ def search_venues():
         'count': len(venues_query),
         'data': [{'id': venue.id,
                   'name': venue.name,
-                  'num_upcoming_shows': Show.query.filter_by(venue_id=venue.id).count()}  # TODO: add upcoming logic
+                  'num_upcoming_shows': Show.query.filter(Show.venue_id == venue.id,
+                                                          Show.start_time > datetime.now()).count()}
                  for venue in venues_query]
     }
 
@@ -225,15 +226,15 @@ def show_venue(venue_id):
         "artist_id": show.artist.id,
         "artist_name": show.artist.name,
         "artist_image_link": show.artist.image_link,
-        "start_time": show.start_time
-    } for show in Show.query.filter_by(venue_id=venue.id).all()]  # TODO: implement past logic
+        "start_time": str(show.start_time)
+    } for show in Show.query.filter(Show.venue_id == venue.id, Show.start_time < datetime.now()).all()]
 
     upcoming_shows = [{
         "artist_id": show.artist.id,
         "artist_name": show.artist.name,
         "artist_image_link": show.artist.image_link,
-        "start_time": show.start_time
-    } for show in Show.query.filter_by(venue_id=venue.id).all()]  # TODO: implement upcoming logic
+        "start_time": str(show.start_time)
+    } for show in Show.query.filter(Show.venue_id == venue.id, Show.start_time > datetime.now()).all()]
 
     data = {
         "id": venue.id,
@@ -374,7 +375,8 @@ def search_artists():
         'count': len(artists_query),
         'data': [{'id': artist.id,
                   'name': artist.name,
-                  'num_upcoming_shows': Show.query.filter_by(artist_id=artist.id).count()}  # TODO: add upcoming logic
+                  'num_upcoming_shows': Show.query.filter(Show.artist_id == artist.id,
+                                                          Show.start_time > datetime.now()).count()}
                  for artist in artists_query]
     }
 
@@ -467,15 +469,15 @@ def show_artist(artist_id):
         "venue_id": show.venue.id,
         "venue_name": show.venue.name,
         "venue_image_link": show.venue.image_link,
-        "start_time": show.start_time
-    } for show in Show.query.filter_by(artist_id=artist.id).all()]  # TODO: implement past logic
+        "start_time": str(show.start_time)
+    } for show in Show.query.filter(Show.artist_id == artist.id, Show.start_time < datetime.now()).all()]
 
     upcoming_shows = [{
         "venue_id": show.venue.id,
         "venue_name": show.venue.name,
         "venue_image_link": show.venue.image_link,
-        "start_time": show.start_time
-    } for show in Show.query.filter_by(artist_id=artist.id).all()]  # TODO: implement upcoming logic
+        "start_time": str(show.start_time)
+    } for show in Show.query.filter(Show.artist_id == artist.id, Show.start_time > datetime.now()).all()]
 
     data = {
         "id": artist.id,
@@ -714,12 +716,24 @@ def create_show_submission():
     # called to create new shows in the db, upon submitting new show listing form
     # TODO: insert form data as a new Show record in the db, instead
 
-    # on successful db insert, flash success
-    flash('Show was successfully listed!')
-    # TODO: on unsuccessful db insert, flash an error instead.
-    # e.g., flash('An error occurred. Show could not be listed.')
-    # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
-    return render_template('pages/home.html')
+    error = False
+
+    try:
+        show = Show(start_time=request.form['start_time'], artist_id=request.form['artist_id'],
+                    venue_id=request.form['venue_id'])
+        db.session.add(show)
+        db.session.commit()
+    except:
+        error = True
+    finally:
+        db.session.close()
+
+    if error:
+        flash('An error occurred. Show could not be listed.')
+        return redirect(url_for('create_show_submission'))
+    else:
+        flash('The show was successfully listed!')
+        return render_template('pages/home.html')
 
 
 @app.errorhandler(404)
